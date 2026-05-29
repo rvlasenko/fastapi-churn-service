@@ -1,8 +1,13 @@
 from fastapi import APIRouter, Depends, Query
 
-from churn_service.dependencies import get_dataset_service
-from churn_service.schemas.dataset import DatasetInfoResponse, DatasetPreviewResponse
+from churn_service.dependencies import get_dataset_service, get_preprocessing_service
+from churn_service.schemas.dataset import (
+    DatasetInfoResponse,
+    DatasetPreviewResponse,
+    DatasetSplitInfoResponse,
+)
 from churn_service.services.dataset import DatasetService
+from churn_service.services.preprocessing import PreprocessingService
 
 router = APIRouter()
 
@@ -19,3 +24,10 @@ def preview(
 @router.get("/info")
 def info(service: DatasetService = Depends(get_dataset_service)) -> DatasetInfoResponse:  # noqa: B008
     return service.get_info()
+
+
+@router.get("/split-info")
+def split_info(
+    service: PreprocessingService = Depends(get_preprocessing_service),  # noqa: B008
+) -> DatasetSplitInfoResponse:
+    return service.get_split_info()

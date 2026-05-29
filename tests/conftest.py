@@ -2,9 +2,10 @@ import pytest
 from fastapi.testclient import TestClient
 
 from churn_service.core.config import Settings
-from churn_service.dependencies import get_dataset_service
+from churn_service.dependencies import get_dataset_service, get_preprocessing_service
 from churn_service.main import create_app
 from churn_service.services.dataset import DatasetService
+from churn_service.services.preprocessing import PreprocessingService
 
 
 @pytest.fixture(scope="session")
@@ -18,9 +19,19 @@ def dataset_service(test_settings: Settings) -> DatasetService:
 
 
 @pytest.fixture(scope="session")
-def app(test_settings: Settings, dataset_service: DatasetService):
+def preprocessing_service(dataset_service: DatasetService) -> PreprocessingService:
+    return PreprocessingService(dataset_service.get_dataframe())
+
+
+@pytest.fixture(scope="session")
+def app(
+    test_settings: Settings,
+    dataset_service: DatasetService,
+    preprocessing_service: PreprocessingService,
+):
     application = create_app(settings=test_settings)
     application.dependency_overrides[get_dataset_service] = lambda: dataset_service
+    application.dependency_overrides[get_preprocessing_service] = lambda: preprocessing_service
     return application
 
 

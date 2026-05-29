@@ -74,3 +74,55 @@ def test_info_distribution_sums_to_row_count(client: TestClient) -> None:
     body = response.json()
     dist = body["churn_distribution"]
     assert dist["retained"] + dist["churned"] == body["row_count"]
+
+
+def test_split_info_returns_200(client: TestClient) -> None:
+    response = client.get("/api/v1/dataset/split-info")
+    assert response.status_code == 200
+
+
+def test_split_info_has_required_fields(client: TestClient) -> None:
+    response = client.get("/api/v1/dataset/split-info")
+    assert response.status_code == 200
+    body = response.json()
+    assert "train_size" in body
+    assert "test_size" in body
+    assert "test_ratio" in body
+    assert "numerical_features" in body
+    assert "categorical_features" in body
+    assert "train_distribution" in body
+    assert "test_distribution" in body
+
+
+def test_split_sizes_sum_to_row_count(client: TestClient) -> None:
+    info_response = client.get("/api/v1/dataset/info")
+    assert info_response.status_code == 200
+    total_rows = info_response.json()["row_count"]
+
+    split_response = client.get("/api/v1/dataset/split-info")
+    assert split_response.status_code == 200
+    body = split_response.json()
+    assert body["train_size"] + body["test_size"] == total_rows
+
+
+def test_split_train_distribution_sums_correctly(client: TestClient) -> None:
+    response = client.get("/api/v1/dataset/split-info")
+    assert response.status_code == 200
+    dist = response.json()["train_distribution"]
+    assert dist["retained"] + dist["churned"] == dist["total"]
+
+
+def test_split_test_distribution_sums_correctly(client: TestClient) -> None:
+    response = client.get("/api/v1/dataset/split-info")
+    assert response.status_code == 200
+    dist = response.json()["test_distribution"]
+    assert dist["retained"] + dist["churned"] == dist["total"]
+
+
+def test_split_churn_rates_are_approximately_equal(client: TestClient) -> None:
+    response = client.get("/api/v1/dataset/split-info")
+    assert response.status_code == 200
+    body = response.json()
+    train_rate = body["train_distribution"]["churn_rate"]
+    test_rate = body["test_distribution"]["churn_rate"]
+    assert abs(train_rate - test_rate) < 0.01

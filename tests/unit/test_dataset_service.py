@@ -55,3 +55,12 @@ def test_missing_columns_raises_dataset_validation_error(tmp_path: Path) -> None
 def test_missing_file_raises_file_not_found_error() -> None:
     with pytest.raises(FileNotFoundError):
         DatasetService(Path("nonexistent/path.csv"))
+
+
+def test_get_dataframe_returns_dataframe_with_expected_shape(service: DatasetService) -> None:
+    import pandas as pd
+
+    df = service.get_dataframe()
+    info = service.get_info()
+    assert isinstance(df, pd.DataFrame)
+    assert df.shape == (info.row_count, info.column_count)

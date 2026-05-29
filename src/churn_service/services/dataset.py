@@ -20,6 +20,9 @@ class DatasetService:
         rows = self._df.head(n).to_dict(orient="records")
         return [DatasetRowChurn.model_validate(row) for row in rows]
 
+    def get_dataframe(self) -> pd.DataFrame:
+        return self._df
+
     def get_info(self) -> DatasetInfoResponse:
         churn_counts = self._df["churn"].value_counts()
         feature_names = [col for col in self._df.columns if col != "churn"]
