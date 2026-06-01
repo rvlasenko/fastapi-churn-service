@@ -2,15 +2,28 @@ import pytest
 from fastapi.testclient import TestClient
 
 from churn_service.core.config import Settings
-from churn_service.dependencies import get_dataset_service, get_preprocessing_service
+from churn_service.dependencies import (
+    get_dataset_service,
+    get_model_storage_service,
+    get_model_training_service,
+    get_prediction_service,
+    get_preprocessing_service,
+)
 from churn_service.main import create_app
 from churn_service.services.dataset import DatasetService
+from churn_service.services.model_storage import ModelStorageService
+from churn_service.services.prediction import PredictionService
 from churn_service.services.preprocessing import PreprocessingService
+from churn_service.services.training import ModelTrainingService
 
 
 @pytest.fixture(scope="session")
-def test_settings() -> Settings:
-    return Settings(app_name="churn-service-test", debug=True)
+def test_settings(tmp_path_factory) -> Settings:
+    return Settings(
+        app_name="churn-service-test",
+        debug=True,
+        models_dir=tmp_path_factory.mktemp("models_settings"),
+    )
 
 
 @pytest.fixture(scope="session")
@@ -24,14 +37,39 @@ def preprocessing_service(dataset_service: DatasetService) -> PreprocessingServi
 
 
 @pytest.fixture(scope="session")
+def model_storage_service(tmp_path_factory) -> ModelStorageService:
+    models_dir = tmp_path_factory.mktemp("models_session")
+    return ModelStorageService(models_dir)
+
+
+@pytest.fixture(scope="session")
+def model_training_service(
+    preprocessing_service: PreprocessingService,
+    model_storage_service: ModelStorageService,
+) -> ModelTrainingService:
+    return ModelTrainingService(preprocessing_service, model_storage_service)
+
+
+@pytest.fixture(scope="session")
+def prediction_service() -> PredictionService:
+    return PredictionService()
+
+
+@pytest.fixture(scope="session")
 def app(
     test_settings: Settings,
     dataset_service: DatasetService,
     preprocessing_service: PreprocessingService,
+    model_storage_service: ModelStorageService,
+    model_training_service: ModelTrainingService,
+    prediction_service: PredictionService,
 ):
     application = create_app(settings=test_settings)
     application.dependency_overrides[get_dataset_service] = lambda: dataset_service
     application.dependency_overrides[get_preprocessing_service] = lambda: preprocessing_service
+    application.dependency_overrides[get_model_storage_service] = lambda: model_storage_service
+    application.dependency_overrides[get_model_training_service] = lambda: model_training_service
+    application.dependency_overrides[get_prediction_service] = lambda: prediction_service
     return application
 
 

@@ -35,21 +35,64 @@ Copy `.env.example` to `.env` and adjust values if needed:
 cp .env.example .env
 ```
 
+Key settings: `DATASET_PATH` (default: `data/churn_dataset.csv`), `MODELS_DIR` (default: `models/`).
+
+## API Endpoints
+
+| Method | Path | Description |
+|---|---|---|
+| GET | `/api/v1/` | Health check |
+| GET | `/api/v1/dataset/info` | Dataset statistics and class distribution |
+| GET | `/api/v1/dataset/split-info` | Train/test split sizes and feature lists |
+| GET | `/api/v1/dataset/preview` | First N rows of the dataset |
+| POST | `/api/v1/model/train` | Train and persist the churn model |
+| GET | `/api/v1/model/status` | Model status, training timestamp, and metrics |
+| POST | `/api/v1/predict/` | Predict churn for a single record |
+
+## Usage
+
+```bash
+# Train the model
+curl -X POST http://localhost:8000/api/v1/model/train
+
+# Check model status and metrics
+curl http://localhost:8000/api/v1/model/status
+
+# Predict churn for a customer
+curl -X POST http://localhost:8000/api/v1/predict/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "monthly_fee": 29.99,
+    "usage_hours": 120,
+    "support_requests": 3,
+    "account_age_months": 24,
+    "failed_payments": 0,
+    "region": "europe",
+    "device_type": "mobile",
+    "payment_method": "card",
+    "autopay_enabled": 1
+  }'
+```
+
+The trained model is saved to `models/churn_model.joblib` and loaded automatically on the next restart.
+
 ## Project Structure
 
 ```
 src/churn_service/
-├── main.py              — app factory
-├── core/config.py       — settings via environment variables
-├── schemas/features.py  — Pydantic input models
-├── services/            — business logic (ML model)
+├── main.py              — app factory with startup lifespan
+├── core/                — settings, exceptions
+├── schemas/             — Pydantic request/response models
+├── services/            — dataset, preprocessing, training, model storage
 └── api/v1/              — HTTP endpoints
 
 data/
 └── churn_dataset.csv    — training dataset
 
+models/                  — persisted model files (gitignored)
+
 tests/
-├── unit/                — schema validation tests
+├── unit/                — service and schema tests
 └── integration/         — HTTP endpoint tests
 ```
 

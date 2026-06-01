@@ -1,11 +1,14 @@
 from functools import lru_cache
 
-from fastapi import HTTPException
+from fastapi import Depends, HTTPException, Request
 
 from churn_service.core.config import Settings
 from churn_service.core.exceptions import DatasetValidationError
 from churn_service.services.dataset import DatasetService
+from churn_service.services.model_storage import ModelStorageService
+from churn_service.services.prediction import PredictionService
 from churn_service.services.preprocessing import PreprocessingService
+from churn_service.services.training import ModelTrainingService
 
 
 @lru_cache
@@ -33,3 +36,19 @@ def get_preprocessing_service() -> PreprocessingService:
         return service
     except DatasetValidationError as e:
         raise HTTPException(status_code=503, detail=f"Dataset preprocessing failed: {e}") from e
+
+
+def get_model_storage_service(request: Request) -> ModelStorageService:
+    return request.app.state.model_storage_service
+
+
+def get_model_training_service(
+    preprocessing: PreprocessingService = Depends(get_preprocessing_service),  # noqa: B008
+    storage: ModelStorageService = Depends(get_model_storage_service),  # noqa: B008
+) -> ModelTrainingService:
+    return ModelTrainingService(preprocessing, storage)
+
+
+@lru_cache
+def get_prediction_service() -> PredictionService:
+    return PredictionService()
