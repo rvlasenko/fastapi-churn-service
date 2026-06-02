@@ -101,7 +101,7 @@ def test_startup_loads_existing_model_without_retraining(
     # Pre-populate model file by training directly (no HTTP call)
     storage = ModelStorageService(models_dir)
     training_service = ModelTrainingService(preprocessing_service, storage)
-    training_service.train()
+    training_service.train_and_save()
     assert (models_dir / "churn_model.joblib").exists()
 
     # Create fresh app pointing to that models dir — no dependency overrides

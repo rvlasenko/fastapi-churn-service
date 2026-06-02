@@ -46,7 +46,7 @@ class ModelStorageService:
         self._current = trained_model
 
     def load(self) -> TrainedModel:
-        if not self._path.exists():
+        if not self.exists():
             raise ModelNotFoundError(f"Model file not found: {self._path}")
         try:
             return joblib.load(self._path)
@@ -54,7 +54,7 @@ class ModelStorageService:
             raise ModelLoadError(f"Failed to load model from {self._path}") from exc
 
     def _load_if_exists(self) -> TrainedModel | None:
-        if not self._path.exists():
+        if not self.exists():
             return None
         try:
             return joblib.load(self._path)

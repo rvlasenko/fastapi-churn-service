@@ -51,8 +51,8 @@ def model_training_service(
 
 
 @pytest.fixture(scope="session")
-def prediction_service() -> PredictionService:
-    return PredictionService()
+def prediction_service(model_storage_service: ModelStorageService) -> PredictionService:
+    return PredictionService(model_storage_service)
 
 
 @pytest.fixture(scope="session")

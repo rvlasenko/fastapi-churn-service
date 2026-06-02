@@ -4,7 +4,7 @@ import pandas as pd
 import pytest
 
 from churn_service.schemas.training import TrainResponse
-from churn_service.services.model_storage import ModelStorageService
+from churn_service.services.model_storage import ModelStorageService, TrainedModel
 from churn_service.services.preprocessing import PreprocessingService
 from churn_service.services.training import ModelTrainingService
 
@@ -29,37 +29,82 @@ def service(
 
 
 @pytest.fixture(scope="module")
-def result(service: ModelTrainingService) -> TrainResponse:
+def trained_model(service: ModelTrainingService) -> TrainedModel:
     return service.train()
 
 
-def test_train_returns_train_response(result: TrainResponse) -> None:
-    assert isinstance(result, TrainResponse)
+@pytest.fixture(scope="module")
+def train_response(service: ModelTrainingService) -> TrainResponse:
+    return service.train_and_save()
 
 
-def test_accuracy_is_in_valid_range(result: TrainResponse) -> None:
-    assert 0.0 <= result.accuracy <= 1.0
+# ---------------------------------------------------------------------------
+# train() — pure training, no persistence
+# ---------------------------------------------------------------------------
 
 
-def test_f1_is_in_valid_range(result: TrainResponse) -> None:
-    assert 0.0 <= result.f1 <= 1.0
+def test_train_returns_trained_model(trained_model: TrainedModel) -> None:
+    assert isinstance(trained_model, TrainedModel)
+
+
+def test_train_accuracy_is_in_valid_range(trained_model: TrainedModel) -> None:
+    assert 0.0 <= trained_model.accuracy <= 1.0
+
+
+def test_train_f1_is_in_valid_range(trained_model: TrainedModel) -> None:
+    assert 0.0 <= trained_model.f1 <= 1.0
 
 
 def test_train_size_matches_split(
-    result: TrainResponse, preprocessing: PreprocessingService
+    trained_model: TrainedModel, preprocessing: PreprocessingService
 ) -> None:
     split = preprocessing.prepare_split()
-    assert result.train_size == len(split.y_train)
+    assert trained_model.train_size == len(split.y_train)
 
 
 def test_test_size_matches_split(
-    result: TrainResponse, preprocessing: PreprocessingService
+    trained_model: TrainedModel, preprocessing: PreprocessingService
 ) -> None:
     split = preprocessing.prepare_split()
-    assert result.test_size == len(split.y_test)
+    assert trained_model.test_size == len(split.y_test)
 
 
-def test_training_is_reproducible(service: ModelTrainingService, result: TrainResponse) -> None:
+def test_train_does_not_persist(preprocessing: PreprocessingService, tmp_path_factory) -> None:
+    isolated_storage = ModelStorageService(tmp_path_factory.mktemp("no_persist"))
+    service = ModelTrainingService(preprocessing, isolated_storage)
+    service.train()
+    assert isolated_storage.current is None
+
+
+def test_training_is_reproducible(
+    service: ModelTrainingService, trained_model: TrainedModel
+) -> None:
     second = service.train()
-    assert second.accuracy == result.accuracy
-    assert second.f1 == result.f1
+    assert second.accuracy == trained_model.accuracy
+    assert second.f1 == trained_model.f1
+
+
+# ---------------------------------------------------------------------------
+# train_and_save() — training + persistence + API response
+# ---------------------------------------------------------------------------
+
+
+def test_train_and_save_returns_train_response(train_response: TrainResponse) -> None:
+    assert isinstance(train_response, TrainResponse)
+
+
+def test_train_and_save_persists_model(
+    train_response: TrainResponse, storage: ModelStorageService
+) -> None:
+    # train_response fixture calls train_and_save(), which must populate storage
+    assert storage.current is not None
+
+
+def test_train_and_save_metrics_match_storage(
+    train_response: TrainResponse, storage: ModelStorageService
+) -> None:
+    assert storage.current is not None
+    assert train_response.accuracy == storage.current.accuracy
+    assert train_response.f1 == storage.current.f1
+    assert train_response.train_size == storage.current.train_size
+    assert train_response.test_size == storage.current.test_size

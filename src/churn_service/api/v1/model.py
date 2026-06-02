@@ -13,7 +13,7 @@ router = APIRouter()
 def train(
     service: ModelTrainingService = Depends(get_model_training_service),  # noqa: B008
 ) -> TrainResponse:
-    return service.train()
+    return service.train_and_save()
 
 
 @router.get("/status")

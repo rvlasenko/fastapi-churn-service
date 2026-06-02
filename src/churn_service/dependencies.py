@@ -49,6 +49,7 @@ def get_model_training_service(
     return ModelTrainingService(preprocessing, storage)
 
 
-@lru_cache
-def get_prediction_service() -> PredictionService:
-    return PredictionService()
+def get_prediction_service(
+    storage: ModelStorageService = Depends(get_model_storage_service),  # noqa: B008
+) -> PredictionService:
+    return PredictionService(storage)
