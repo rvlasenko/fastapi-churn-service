@@ -107,6 +107,16 @@ def test_schema_numerical_types_match_feature_vector_annotations(client: TestCli
         assert feature["type"] == expected
 
 
+def test_schema_numerical_types_ground_truth(client: TestClient) -> None:
+    types = {f["name"]: f["type"] for f in client.get(SCHEMA_URL).json()["numerical_features"]}
+    assert types["monthly_fee"] == "float"
+    assert types["usage_hours"] == "float"
+    assert types["support_requests"] == "int"
+    assert types["account_age_months"] == "int"
+    assert types["failed_payments"] == "int"
+    assert types["autopay_enabled"] == "int"
+
+
 # ---------------------------------------------------------------------------
 # Enum values
 # ---------------------------------------------------------------------------

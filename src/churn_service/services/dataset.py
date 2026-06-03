@@ -31,7 +31,7 @@ class DatasetService:
             column_count=len(self._df.columns),
             feature_names=feature_names,
             churn_distribution=ChurnDistribution(
-                retained=int(churn_counts.get(0, 0)),
-                churned=int(churn_counts.get(1, 0)),
+                retained=int(churn_counts.get(0) or 0),
+                churned=int(churn_counts.get(1) or 0),
             ),
         )

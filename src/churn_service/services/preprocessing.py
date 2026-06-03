@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import cast
 
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -55,7 +56,7 @@ class PreprocessingService:
         return self._split
 
     def _compute_split(self) -> DataSplit:
-        nan_cols = [col for col in self._df.columns if self._df[col].isna().any()]
+        nan_cols = [col for col in self._df.columns if bool(self._df[col].isna().any())]
         if nan_cols:
             # Real missing-value imputation (median fill, mode fill, etc.) will belong
             # in the sklearn preprocessing pipeline in a future day.
@@ -64,9 +65,11 @@ class PreprocessingService:
         X = self._df[NUMERICAL_FEATURES + CATEGORICAL_FEATURES]  # noqa: N806
         y = self._df[TARGET_COLUMN]
 
-        X_train, X_test, y_train, y_test = train_test_split(  # noqa: N806
-            X, y, test_size=TEST_SIZE, random_state=RANDOM_STATE, stratify=y
-        )
+        split = train_test_split(X, y, test_size=TEST_SIZE, random_state=RANDOM_STATE, stratify=y)
+        X_train = cast(pd.DataFrame, split[0])  # noqa: N806
+        X_test = cast(pd.DataFrame, split[1])  # noqa: N806
+        y_train = cast(pd.Series, split[2])  # noqa: N806
+        y_test = cast(pd.Series, split[3])  # noqa: N806
 
         return DataSplit(
             X_train=X_train,
