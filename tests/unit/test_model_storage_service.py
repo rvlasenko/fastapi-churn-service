@@ -24,7 +24,7 @@ def sample_trained_model(minimal_pipeline: Pipeline) -> TrainedModel:
     return TrainedModel(
         pipeline=minimal_pipeline,
         trained_at=datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC),
-        model_type="LogisticRegression",
+        model_type="logreg",
         accuracy=0.75,
         f1=0.8,
         train_size=100,

@@ -1,8 +1,8 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Body, Depends
 
 from churn_service.dependencies import get_model_storage_service, get_model_training_service
 from churn_service.schemas.model import ModelMetrics, ModelStatusResponse
-from churn_service.schemas.training import TrainResponse
+from churn_service.schemas.training import TrainingConfigChurn, TrainResponse
 from churn_service.services.model_storage import ModelStorageService
 from churn_service.services.training import ModelTrainingService
 
@@ -11,9 +11,10 @@ router = APIRouter()
 
 @router.post("/train")
 def train(
+    config: TrainingConfigChurn | None = Body(default=None),  # noqa: B008
     service: ModelTrainingService = Depends(get_model_training_service),  # noqa: B008
 ) -> TrainResponse:
-    return service.train_and_save()
+    return service.train_and_save(config or TrainingConfigChurn())
 
 
 @router.get("/status")
@@ -32,4 +33,6 @@ def status(
             train_size=trained_model.train_size,
             test_size=trained_model.test_size,
         ),
+        model_type=trained_model.model_type,
+        hyperparameters=trained_model.hyperparameters,
     )

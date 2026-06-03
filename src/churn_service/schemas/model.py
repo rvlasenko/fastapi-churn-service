@@ -14,3 +14,5 @@ class ModelStatusResponse(BaseModel):
     is_trained: bool
     trained_at: datetime | None
     metrics: ModelMetrics | None
+    model_type: str | None = None
+    hyperparameters: dict[str, int | float | str | bool | None] | None = None

@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 
@@ -19,6 +19,7 @@ class TrainedModel:
     f1: float
     train_size: int
     test_size: int
+    hyperparameters: dict[str, int | float | str | bool | None] = field(default_factory=dict)
 
 
 class ModelStorageService:

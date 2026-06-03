@@ -91,6 +91,59 @@ def test_status_metrics_match_train_response(status_client: TestClient) -> None:
 # ---------------------------------------------------------------------------
 
 
+# ---------------------------------------------------------------------------
+# model_type and hyperparameters in status response
+# ---------------------------------------------------------------------------
+
+
+def test_status_shows_model_type_after_default_training(status_client: TestClient) -> None:
+    status_client.post("/api/v1/model/train")
+    body = status_client.get("/api/v1/model/status").json()
+    assert body["model_type"] == "logreg"
+
+
+def test_status_shows_empty_hyperparameters_after_default_training(
+    status_client: TestClient,
+) -> None:
+    status_client.post("/api/v1/model/train")
+    body = status_client.get("/api/v1/model/status").json()
+    assert body["hyperparameters"] == {}
+
+
+def test_status_shows_random_forest_model_type(status_client: TestClient) -> None:
+    status_client.post("/api/v1/model/train", json={"model_type": "random_forest"})
+    body = status_client.get("/api/v1/model/status").json()
+    assert body["model_type"] == "random_forest"
+
+
+def test_status_shows_hyperparameters_when_provided(status_client: TestClient) -> None:
+    status_client.post(
+        "/api/v1/model/train",
+        json={"model_type": "logreg", "hyperparameters": {"max_iter": 500}},
+    )
+    body = status_client.get("/api/v1/model/status").json()
+    assert body["hyperparameters"] == {"max_iter": 500}
+
+
+def test_status_model_type_null_when_not_trained(tmp_path_factory, test_settings) -> None:
+    from churn_service.dependencies import get_model_storage_service
+    from churn_service.main import create_app
+    from churn_service.services.model_storage import ModelStorageService
+
+    fresh_storage = ModelStorageService(tmp_path_factory.mktemp("models_null_check"))
+    app = create_app(settings=test_settings)
+    app.dependency_overrides[get_model_storage_service] = lambda: fresh_storage
+    with TestClient(app) as c:
+        body = c.get("/api/v1/model/status").json()
+    assert body["model_type"] is None
+    assert body["hyperparameters"] is None
+
+
+# ---------------------------------------------------------------------------
+# Startup loading test — verifies that lifespan loads an existing model file
+# ---------------------------------------------------------------------------
+
+
 def test_startup_loads_existing_model_without_retraining(
     tmp_path,
     test_settings: Settings,

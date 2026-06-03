@@ -45,17 +45,27 @@ Key settings: `DATASET_PATH` (default: `data/churn_dataset.csv`), `MODELS_DIR` (
 | GET | `/api/v1/dataset/info` | Dataset statistics and class distribution |
 | GET | `/api/v1/dataset/split-info` | Train/test split sizes and feature lists |
 | GET | `/api/v1/dataset/preview` | First N rows of the dataset |
-| POST | `/api/v1/model/train` | Train and persist the churn model |
-| GET | `/api/v1/model/status` | Model status, training timestamp, and metrics |
+| POST | `/api/v1/model/train` | Train and persist the churn model (optional config body) |
+| GET | `/api/v1/model/status` | Model status, training timestamp, metrics, and model config |
 | POST | `/api/v1/predict/` | Predict churn for one or more customers |
 
 ## Usage
 
 ```bash
-# Train the model
+# Train with default model (LogisticRegression)
 curl -X POST http://localhost:8000/api/v1/model/train
 
-# Check model status and metrics
+# Train with RandomForestClassifier and custom hyperparameters
+curl -X POST http://localhost:8000/api/v1/model/train \
+  -H "Content-Type: application/json" \
+  -d '{"model_type": "random_forest", "hyperparameters": {"n_estimators": 200, "max_depth": 10}}'
+
+# Train LogisticRegression with custom C
+curl -X POST http://localhost:8000/api/v1/model/train \
+  -H "Content-Type: application/json" \
+  -d '{"model_type": "logreg", "hyperparameters": {"C": 0.5}}'
+
+# Check model status, metrics, and training config
 curl http://localhost:8000/api/v1/model/status
 
 # Predict churn for one or more customers
@@ -91,6 +101,15 @@ curl -X POST http://localhost:8000/api/v1/predict/ \
 
 The trained model is saved to `models/churn_model.joblib` and loaded automatically on the next restart.
 
+### Supported models
+
+| `model_type` | Algorithm | Allowed hyperparameters |
+|---|---|---|
+| `logreg` | LogisticRegression | `C`, `max_iter`, `class_weight`, `solver`, `random_state` |
+| `random_forest` | RandomForestClassifier | `n_estimators`, `max_depth`, `min_samples_split`, `min_samples_leaf`, `class_weight`, `random_state` |
+
+Default values: `random_state=42`, `max_iter=1000` (logreg only). Unsupported hyperparameter names return `422`.
+
 ## Project Structure
 
 ```
@@ -98,7 +117,7 @@ src/churn_service/
 ├── main.py              — app factory with startup lifespan
 ├── core/                — settings, exceptions
 ├── schemas/             — Pydantic request/response models
-├── services/            — dataset, preprocessing, training, model storage
+├── services/            — dataset, preprocessing, pipeline builder, training, model storage
 └── api/v1/              — HTTP endpoints
 
 data/
