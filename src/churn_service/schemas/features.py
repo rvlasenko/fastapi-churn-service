@@ -22,6 +22,13 @@ class PaymentMethod(StrEnum):
     CRYPTO = "crypto"
 
 
+CATEGORICAL_FEATURE_ENUMS: dict[str, type[StrEnum]] = {
+    "region": Region,
+    "device_type": DeviceType,
+    "payment_method": PaymentMethod,
+}
+
+
 class FeatureVectorChurn(BaseModel):
     monthly_fee: float = Field(..., gt=0, le=10_000, description="Monthly subscription fee in USD")
     usage_hours: float = Field(

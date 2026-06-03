@@ -4,9 +4,7 @@ from fastapi import HTTPException
 from churn_service.schemas.features import FeatureVectorChurn
 from churn_service.schemas.prediction import PredictItem, PredictResponse
 from churn_service.services.model_storage import ModelStorageService
-from churn_service.services.preprocessing import CATEGORICAL_FEATURES, NUMERICAL_FEATURES
-
-_FEATURE_COLUMNS = NUMERICAL_FEATURES + CATEGORICAL_FEATURES
+from churn_service.services.preprocessing import FEATURE_COLUMNS
 
 
 class PredictionService:
@@ -23,7 +21,7 @@ class PredictionService:
 
         df = pd.DataFrame(
             [item.model_dump() for item in items],
-            columns=_FEATURE_COLUMNS,
+            columns=FEATURE_COLUMNS,
         )
 
         predicted_classes = model.pipeline.predict(df)

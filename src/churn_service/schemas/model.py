@@ -3,6 +3,23 @@ from datetime import datetime
 from pydantic import BaseModel
 
 
+class NumericalFeatureSchema(BaseModel):
+    name: str
+    type: str
+
+
+class CategoricalFeatureSchema(BaseModel):
+    name: str
+    type: str
+    accepted_values: list[str]
+
+
+class ModelSchemaResponse(BaseModel):
+    numerical_features: list[NumericalFeatureSchema]
+    categorical_features: list[CategoricalFeatureSchema]
+    target: str
+
+
 class ModelMetrics(BaseModel):
     accuracy: float
     f1: float

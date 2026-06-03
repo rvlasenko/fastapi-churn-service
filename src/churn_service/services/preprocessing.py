@@ -25,6 +25,8 @@ CATEGORICAL_FEATURES: list[str] = [
     "payment_method",
 ]
 
+FEATURE_COLUMNS: list[str] = NUMERICAL_FEATURES + CATEGORICAL_FEATURES
+
 TEST_SIZE: float = 0.2
 RANDOM_STATE: int = 42  # fixed seed — split is deterministic for the process lifetime
 

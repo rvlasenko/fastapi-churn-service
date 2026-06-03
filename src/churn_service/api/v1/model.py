@@ -1,12 +1,18 @@
 from fastapi import APIRouter, Body, Depends
 
 from churn_service.dependencies import get_model_storage_service, get_model_training_service
-from churn_service.schemas.model import ModelMetrics, ModelStatusResponse
+from churn_service.schemas.model import ModelMetrics, ModelSchemaResponse, ModelStatusResponse
 from churn_service.schemas.training import TrainingConfigChurn, TrainResponse
+from churn_service.services.model_schema import build_model_schema
 from churn_service.services.model_storage import ModelStorageService
 from churn_service.services.training import ModelTrainingService
 
 router = APIRouter()
+
+
+@router.get("/schema")
+def schema() -> ModelSchemaResponse:
+    return build_model_schema()
 
 
 @router.post("/train")
