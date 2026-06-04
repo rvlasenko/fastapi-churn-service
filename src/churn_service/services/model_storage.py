@@ -5,7 +5,7 @@ from pathlib import Path
 import joblib
 from sklearn.pipeline import Pipeline
 
-from churn_service.core.exceptions import ModelLoadError, ModelNotFoundError
+from churn_service.core.exceptions import ModelLoadError, ModelNotTrainedError
 
 _MODEL_FILENAME = "churn_model.joblib"
 
@@ -48,16 +48,21 @@ class ModelStorageService:
 
     def load(self) -> TrainedModel:
         if not self.exists():
-            raise ModelNotFoundError(f"Model file not found: {self._path}")
-        try:
-            return joblib.load(self._path)
-        except Exception as exc:
-            raise ModelLoadError(f"Failed to load model from {self._path}") from exc
+            raise ModelNotTrainedError(f"Model file not found: {self._path}")
+        return self._load_and_validate()
 
     def _load_if_exists(self) -> TrainedModel | None:
         if not self.exists():
             return None
+        return self._load_and_validate()
+
+    def _load_and_validate(self) -> TrainedModel:
         try:
-            return joblib.load(self._path)
+            loaded = joblib.load(self._path)
         except Exception as exc:
             raise ModelLoadError(f"Failed to load model from {self._path}") from exc
+        if not isinstance(loaded, TrainedModel):
+            raise ModelLoadError(
+                f"Expected TrainedModel, got {type(loaded).__name__} in {self._path}"
+            )
+        return loaded

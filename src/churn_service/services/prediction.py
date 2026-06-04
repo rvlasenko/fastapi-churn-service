@@ -1,6 +1,6 @@
 import pandas as pd
-from fastapi import HTTPException
 
+from churn_service.core.exceptions import ModelNotTrainedError
 from churn_service.schemas.features import FeatureVectorChurn
 from churn_service.schemas.prediction import PredictItem, PredictResponse
 from churn_service.services.model_storage import ModelStorageService
@@ -14,9 +14,8 @@ class PredictionService:
     def predict(self, items: list[FeatureVectorChurn]) -> PredictResponse:
         model = self._storage.current
         if model is None:
-            raise HTTPException(
-                status_code=503,
-                detail="No trained model available. Train the model first via POST /api/v1/model/train",
+            raise ModelNotTrainedError(
+                "No trained model available. Train the model first via POST /api/v1/model/train"
             )
 
         df = pd.DataFrame(

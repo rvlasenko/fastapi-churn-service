@@ -4,6 +4,7 @@ from fastapi import FastAPI
 
 from churn_service.api.v1.router import router
 from churn_service.core.config import Settings
+from churn_service.core.error_handlers import register_error_handlers
 from churn_service.core.exceptions import ModelLoadError
 from churn_service.dependencies import get_settings
 from churn_service.services.model_storage import ModelStorageService
@@ -31,6 +32,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         lifespan=lifespan,
     )
     app.include_router(router, prefix="/api/v1")
+    register_error_handlers(app)
     return app
 
 

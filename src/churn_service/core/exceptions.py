@@ -2,13 +2,21 @@ class ChurnServiceError(Exception):
     """Base exception for all domain errors."""
 
 
-class DatasetValidationError(ChurnServiceError):
+class DatasetError(ChurnServiceError):
+    """Raised when the dataset is missing or unreadable."""
+
+
+class DatasetValidationError(DatasetError):
     """Raised when the dataset does not meet the expected schema."""
 
 
-class ModelNotFoundError(ChurnServiceError):
-    """Raised when model file does not exist on disk."""
+class ModelError(ChurnServiceError):
+    """Base exception for model-related failures."""
 
 
-class ModelLoadError(ChurnServiceError):
-    """Raised when model file exists but cannot be deserialized."""
+class ModelNotTrainedError(ModelError):
+    """Raised when no trained model is available."""
+
+
+class ModelLoadError(ModelError):
+    """Raised when a model file exists but cannot be deserialized."""

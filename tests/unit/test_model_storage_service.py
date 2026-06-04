@@ -1,12 +1,13 @@
 from datetime import UTC, datetime
 from pathlib import Path
 
+import joblib
 import pandas as pd
 import pytest
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
 
-from churn_service.core.exceptions import ModelLoadError, ModelNotFoundError
+from churn_service.core.exceptions import ModelLoadError, ModelNotTrainedError
 from churn_service.services.model_storage import ModelStorageService, TrainedModel
 
 
@@ -61,9 +62,9 @@ def test_load_returns_saved_model(tmp_path: Path, sample_trained_model: TrainedM
     assert loaded.test_size == sample_trained_model.test_size
 
 
-def test_load_raises_model_not_found_when_no_file(tmp_path: Path) -> None:
+def test_load_raises_model_not_trained_when_no_file(tmp_path: Path) -> None:
     storage = ModelStorageService(tmp_path)
-    with pytest.raises(ModelNotFoundError):
+    with pytest.raises(ModelNotTrainedError):
         storage.load()
 
 
@@ -88,6 +89,22 @@ def test_exists_returns_true_after_save(tmp_path: Path, sample_trained_model: Tr
 def test_corrupted_file_raises_model_load_error_on_init(tmp_path: Path) -> None:
     (tmp_path / "churn_model.joblib").write_bytes(b"not a joblib file")
     with pytest.raises(ModelLoadError):
+        ModelStorageService(tmp_path)
+
+
+def test_load_raises_model_load_error_on_wrong_type(tmp_path: Path) -> None:
+    joblib.dump({"not": "a model"}, tmp_path / "churn_model.joblib")
+    storage = ModelStorageService.__new__(ModelStorageService)
+    storage._models_dir = tmp_path
+    storage._path = tmp_path / "churn_model.joblib"
+    storage._current = None
+    with pytest.raises(ModelLoadError, match="Expected TrainedModel"):
+        storage.load()
+
+
+def test_init_raises_model_load_error_on_wrong_type(tmp_path: Path) -> None:
+    joblib.dump({"not": "a model"}, tmp_path / "churn_model.joblib")
+    with pytest.raises(ModelLoadError, match="Expected TrainedModel"):
         ModelStorageService(tmp_path)
 
 

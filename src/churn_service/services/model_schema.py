@@ -7,7 +7,11 @@ from churn_service.schemas.model import (
     ModelSchemaResponse,
     NumericalFeatureSchema,
 )
-from churn_service.services.preprocessing import CATEGORICAL_FEATURES, NUMERICAL_FEATURES, TARGET_COLUMN
+from churn_service.services.preprocessing import (
+    CATEGORICAL_FEATURES,
+    NUMERICAL_FEATURES,
+    TARGET_COLUMN,
+)
 
 
 def _resolve_field_type(annotation: Any) -> str:

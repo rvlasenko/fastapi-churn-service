@@ -2,9 +2,9 @@ from unittest.mock import MagicMock
 
 import pandas as pd
 import pytest
-from fastapi import HTTPException
 
 import churn_service.dependencies as deps
+from churn_service.core.exceptions import DatasetValidationError
 
 
 @pytest.fixture(autouse=True)
@@ -14,7 +14,9 @@ def clear_cache():
     deps.get_preprocessing_service.cache_clear()
 
 
-def test_get_preprocessing_service_raises_503_on_nan_data(monkeypatch) -> None:
+def test_get_preprocessing_service_raises_dataset_validation_error_on_nan_data(
+    monkeypatch,
+) -> None:
     df_with_nan = pd.DataFrame(
         {
             "monthly_fee": [float("nan"), 10.0],
@@ -34,8 +36,7 @@ def test_get_preprocessing_service_raises_503_on_nan_data(monkeypatch) -> None:
     mock_ds.get_dataframe.return_value = df_with_nan
     monkeypatch.setattr(deps, "get_dataset_service", lambda: mock_ds)
 
-    with pytest.raises(HTTPException) as exc_info:
+    with pytest.raises(DatasetValidationError) as exc_info:
         deps.get_preprocessing_service()
 
-    assert exc_info.value.status_code == 503
-    assert "preprocessing failed" in exc_info.value.detail
+    assert "missing values" in str(exc_info.value)

@@ -80,7 +80,7 @@ def trained_predict_client(
 def test_predict_without_model_returns_503(untrained_predict_client: TestClient) -> None:
     response = untrained_predict_client.post("/api/v1/predict/", json=VALID_PREDICT_PAYLOAD)
     assert response.status_code == 503
-    assert "train" in response.json()["detail"].lower()
+    assert "train" in response.json()["error"]["message"].lower()
 
 
 # ---------------------------------------------------------------------------

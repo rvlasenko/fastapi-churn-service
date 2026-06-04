@@ -130,6 +130,44 @@ tests/
 └── integration/         — HTTP endpoint tests
 ```
 
+## Error Responses
+
+All errors use a common JSON format:
+
+```json
+{
+  "error": {
+    "code": "stable_error_code",
+    "message": "Human-readable message",
+    "details": null
+  }
+}
+```
+
+**Invalid `/model/train` hyperparameter → 422**
+```bash
+curl -X POST http://localhost:8000/api/v1/model/train \
+  -H "Content-Type: application/json" \
+  -d '{"model_type": "random_forest", "hyperparameters": {"n_estimators": -1}}'
+# {"error": {"code": "validation_error", "message": "Request validation failed", "details": [...]}}
+```
+
+**`/predict` without trained model → 503**
+```bash
+curl -X POST http://localhost:8000/api/v1/predict/ \
+  -H "Content-Type: application/json" \
+  -d '{"items": [...]}'
+# {"error": {"code": "model_not_trained", "message": "No trained model available...", "details": null}}
+```
+
+**Invalid field in `/predict` → 422**
+```bash
+curl -X POST http://localhost:8000/api/v1/predict/ \
+  -H "Content-Type: application/json" \
+  -d '{"items": [{"region": "narnia", ...}]}'
+# {"error": {"code": "validation_error", "message": "Request validation failed", "details": [...]}}
+```
+
 ## Feature Schema
 
 | Feature | Type | Description |
