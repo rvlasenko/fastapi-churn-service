@@ -9,6 +9,7 @@ from churn_service.services.model_storage import ModelStorageService
 from churn_service.services.prediction import PredictionService
 from churn_service.services.preprocessing import PreprocessingService
 from churn_service.services.training import ModelTrainingService
+from churn_service.services.training_history import TrainingHistoryService
 
 
 @lru_cache
@@ -37,11 +38,16 @@ def get_model_storage_service(request: Request) -> ModelStorageService:
     return request.app.state.model_storage_service
 
 
+def get_training_history_service(request: Request) -> TrainingHistoryService:
+    return request.app.state.training_history_service
+
+
 def get_model_training_service(
     preprocessing: PreprocessingService = Depends(get_preprocessing_service),  # noqa: B008
     storage: ModelStorageService = Depends(get_model_storage_service),  # noqa: B008
+    history: TrainingHistoryService = Depends(get_training_history_service),  # noqa: B008
 ) -> ModelTrainingService:
-    return ModelTrainingService(preprocessing, storage)
+    return ModelTrainingService(preprocessing, storage, history)
 
 
 def get_prediction_service(

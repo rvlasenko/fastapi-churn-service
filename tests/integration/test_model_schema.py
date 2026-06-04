@@ -19,6 +19,7 @@ from churn_service.services.model_storage import ModelStorageService
 from churn_service.services.prediction import PredictionService
 from churn_service.services.preprocessing import CATEGORICAL_FEATURES, NUMERICAL_FEATURES
 from churn_service.services.training import ModelTrainingService
+from churn_service.services.training_history import TrainingHistoryService
 from tests.conftest import VALID_FEATURE_PAYLOAD
 
 SCHEMA_URL = "/api/v1/model/schema"
@@ -31,8 +32,10 @@ def trained_schema_client(
     preprocessing_service,
     tmp_path_factory,
 ) -> TestClient:
-    storage = ModelStorageService(tmp_path_factory.mktemp("schema_models"))
-    ModelTrainingService(preprocessing_service, storage).train_and_save()
+    tmpdir = tmp_path_factory.mktemp("schema_models")
+    storage = ModelStorageService(tmpdir)
+    history = TrainingHistoryService(tmpdir)
+    ModelTrainingService(preprocessing_service, storage, history).train_and_save()
     prediction_svc = PredictionService(storage)
     application = create_app(settings=test_settings)
     application.dependency_overrides[get_dataset_service] = lambda: dataset_service

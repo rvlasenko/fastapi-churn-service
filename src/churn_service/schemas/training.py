@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field, model_validator
 class TrainResponse(BaseModel):
     accuracy: float
     f1: float
+    roc_auc: float | None
     train_size: int
     test_size: int
 

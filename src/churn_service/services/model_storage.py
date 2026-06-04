@@ -19,6 +19,7 @@ class TrainedModel:
     f1: float
     train_size: int
     test_size: int
+    roc_auc: float | None = None
     hyperparameters: dict[str, int | float | str | bool | None] = field(default_factory=dict)
 
 

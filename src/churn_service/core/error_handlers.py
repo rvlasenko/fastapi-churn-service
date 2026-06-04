@@ -12,6 +12,8 @@ from churn_service.core.exceptions import (
     ChurnServiceError,
     DatasetError,
     DatasetValidationError,
+    HistoryLoadError,
+    HistoryWriteError,
     ModelError,
     ModelLoadError,
     ModelNotTrainedError,
@@ -28,6 +30,8 @@ class ErrorCode(StrEnum):
     DATASET_VALIDATION_FAILED = "dataset_validation_failed"
     MODEL_NOT_TRAINED = "model_not_trained"
     MODEL_LOAD_FAILED = "model_load_failed"
+    HISTORY_LOAD_FAILED = "history_load_failed"
+    HISTORY_WRITE_FAILED = "history_write_failed"
     INTERNAL_ERROR = "internal_error"
 
 
@@ -105,6 +109,14 @@ async def handle_model_error(request: Request, exc: ModelError) -> JSONResponse:
     return _error_response(503, ErrorCode.INTERNAL_ERROR, "An internal error occurred")
 
 
+async def handle_history_load_error(request: Request, exc: HistoryLoadError) -> JSONResponse:
+    return _error_response(503, ErrorCode.HISTORY_LOAD_FAILED, str(exc))
+
+
+async def handle_history_write_error(request: Request, exc: HistoryWriteError) -> JSONResponse:
+    return _error_response(503, ErrorCode.HISTORY_WRITE_FAILED, str(exc))
+
+
 async def handle_churn_service_error(request: Request, exc: ChurnServiceError) -> JSONResponse:
     logger.exception("Unclassified domain error")
     return _error_response(500, ErrorCode.INTERNAL_ERROR, "An internal error occurred")
@@ -127,6 +139,8 @@ def register_error_handlers(app: FastAPI) -> None:
     app.add_exception_handler(ModelNotTrainedError, handle_model_not_trained_error)  # type: ignore[arg-type]
     app.add_exception_handler(ModelLoadError, handle_model_load_error)  # type: ignore[arg-type]
     app.add_exception_handler(ModelError, handle_model_error)  # type: ignore[arg-type]
+    app.add_exception_handler(HistoryLoadError, handle_history_load_error)  # type: ignore[arg-type]
+    app.add_exception_handler(HistoryWriteError, handle_history_write_error)  # type: ignore[arg-type]
     app.add_exception_handler(ChurnServiceError, handle_churn_service_error)  # type: ignore[arg-type]
     # HTTP-layer and broad fallback — override FastAPI defaults.
     app.add_exception_handler(RequestValidationError, handle_request_validation_error)  # type: ignore[arg-type]

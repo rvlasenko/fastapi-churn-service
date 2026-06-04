@@ -8,6 +8,7 @@ from churn_service.core.error_handlers import register_error_handlers
 from churn_service.core.exceptions import ModelLoadError
 from churn_service.dependencies import get_settings
 from churn_service.services.model_storage import ModelStorageService
+from churn_service.services.training_history import TrainingHistoryService
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -22,6 +23,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         except ModelLoadError as exc:
             raise RuntimeError("App startup failed: model file is corrupted") from exc
         app.state.model_storage_service = storage
+        # History file is read lazily — missing or corrupted file surfaces at
+        # request time, not at startup.
+        app.state.training_history_service = TrainingHistoryService(settings.models_dir)
         yield
 
     app = FastAPI(

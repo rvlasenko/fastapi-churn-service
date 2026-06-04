@@ -20,3 +20,11 @@ class ModelNotTrainedError(ModelError):
 
 class ModelLoadError(ModelError):
     """Raised when a model file exists but cannot be deserialized."""
+
+
+class HistoryLoadError(ChurnServiceError):
+    """Raised when the training history file exists but cannot be read or parsed."""
+
+
+class HistoryWriteError(ChurnServiceError):
+    """Raised when the training history file cannot be written."""

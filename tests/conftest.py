@@ -8,6 +8,7 @@ from churn_service.dependencies import (
     get_model_training_service,
     get_prediction_service,
     get_preprocessing_service,
+    get_training_history_service,
 )
 from churn_service.main import create_app
 from churn_service.services.dataset import DatasetService
@@ -15,6 +16,7 @@ from churn_service.services.model_storage import ModelStorageService
 from churn_service.services.prediction import PredictionService
 from churn_service.services.preprocessing import PreprocessingService
 from churn_service.services.training import ModelTrainingService
+from churn_service.services.training_history import TrainingHistoryService
 
 
 @pytest.fixture(scope="session")
@@ -43,11 +45,17 @@ def model_storage_service(tmp_path_factory) -> ModelStorageService:
 
 
 @pytest.fixture(scope="session")
+def training_history_service(tmp_path_factory) -> TrainingHistoryService:
+    return TrainingHistoryService(tmp_path_factory.mktemp("history_session"))
+
+
+@pytest.fixture(scope="session")
 def model_training_service(
     preprocessing_service: PreprocessingService,
     model_storage_service: ModelStorageService,
+    training_history_service: TrainingHistoryService,
 ) -> ModelTrainingService:
-    return ModelTrainingService(preprocessing_service, model_storage_service)
+    return ModelTrainingService(preprocessing_service, model_storage_service, training_history_service)
 
 
 @pytest.fixture(scope="session")
@@ -62,6 +70,7 @@ def app(
     preprocessing_service: PreprocessingService,
     model_storage_service: ModelStorageService,
     model_training_service: ModelTrainingService,
+    training_history_service: TrainingHistoryService,
     prediction_service: PredictionService,
 ):
     application = create_app(settings=test_settings)
@@ -69,6 +78,7 @@ def app(
     application.dependency_overrides[get_preprocessing_service] = lambda: preprocessing_service
     application.dependency_overrides[get_model_storage_service] = lambda: model_storage_service
     application.dependency_overrides[get_model_training_service] = lambda: model_training_service
+    application.dependency_overrides[get_training_history_service] = lambda: training_history_service
     application.dependency_overrides[get_prediction_service] = lambda: prediction_service
     return application
 

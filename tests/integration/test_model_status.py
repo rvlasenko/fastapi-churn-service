@@ -8,12 +8,14 @@ from churn_service.dependencies import (
     get_model_training_service,
     get_prediction_service,
     get_preprocessing_service,
+    get_training_history_service,
 )
 from churn_service.main import create_app
 from churn_service.services.model_storage import ModelStorageService
 from churn_service.services.prediction import PredictionService
 from churn_service.services.preprocessing import PreprocessingService
 from churn_service.services.training import ModelTrainingService
+from churn_service.services.training_history import TrainingHistoryService
 
 # ---------------------------------------------------------------------------
 # Module-scoped fixtures: isolated fresh storage independent of other tests
@@ -26,11 +28,17 @@ def fresh_storage(tmp_path_factory) -> ModelStorageService:
 
 
 @pytest.fixture(scope="module")
+def fresh_history_service(tmp_path_factory) -> TrainingHistoryService:
+    return TrainingHistoryService(tmp_path_factory.mktemp("history_status"))
+
+
+@pytest.fixture(scope="module")
 def fresh_training_service(
     preprocessing_service: PreprocessingService,
     fresh_storage: ModelStorageService,
+    fresh_history_service: TrainingHistoryService,
 ) -> ModelTrainingService:
-    return ModelTrainingService(preprocessing_service, fresh_storage)
+    return ModelTrainingService(preprocessing_service, fresh_storage, fresh_history_service)
 
 
 @pytest.fixture(scope="module")
@@ -40,6 +48,7 @@ def status_client(
     preprocessing_service: PreprocessingService,
     fresh_storage: ModelStorageService,
     fresh_training_service: ModelTrainingService,
+    fresh_history_service: TrainingHistoryService,
     prediction_service: PredictionService,
 ) -> TestClient:
     application = create_app(settings=test_settings)
@@ -47,6 +56,7 @@ def status_client(
     application.dependency_overrides[get_preprocessing_service] = lambda: preprocessing_service
     application.dependency_overrides[get_model_storage_service] = lambda: fresh_storage
     application.dependency_overrides[get_model_training_service] = lambda: fresh_training_service
+    application.dependency_overrides[get_training_history_service] = lambda: fresh_history_service
     application.dependency_overrides[get_prediction_service] = lambda: prediction_service
     with TestClient(application) as c:
         yield c
@@ -82,13 +92,17 @@ def test_status_metrics_match_train_response(status_client: TestClient) -> None:
     status_body = status_client.get("/api/v1/model/status").json()
     assert status_body["metrics"]["accuracy"] == train_body["accuracy"]
     assert status_body["metrics"]["f1"] == train_body["f1"]
+    assert status_body["metrics"]["roc_auc"] == train_body["roc_auc"]
     assert status_body["metrics"]["train_size"] == train_body["train_size"]
     assert status_body["metrics"]["test_size"] == train_body["test_size"]
 
 
-# ---------------------------------------------------------------------------
-# Startup loading test — verifies that lifespan loads an existing model file
-# ---------------------------------------------------------------------------
+def test_status_metrics_include_roc_auc(status_client: TestClient) -> None:
+    status_client.post("/api/v1/model/train")
+    body = status_client.get("/api/v1/model/status").json()
+    assert "roc_auc" in body["metrics"]
+    assert body["metrics"]["roc_auc"] is not None
+    assert 0.0 <= body["metrics"]["roc_auc"] <= 1.0
 
 
 # ---------------------------------------------------------------------------
@@ -153,7 +167,8 @@ def test_startup_loads_existing_model_without_retraining(
 
     # Pre-populate model file by training directly (no HTTP call)
     storage = ModelStorageService(models_dir)
-    training_service = ModelTrainingService(preprocessing_service, storage)
+    history_service = TrainingHistoryService(models_dir)
+    training_service = ModelTrainingService(preprocessing_service, storage, history_service)
     training_service.train_and_save()
     assert (models_dir / "churn_model.joblib").exists()
 

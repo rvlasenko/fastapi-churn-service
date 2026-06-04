@@ -13,6 +13,7 @@ from churn_service.services.model_storage import ModelStorageService
 from churn_service.services.prediction import PredictionService
 from churn_service.services.preprocessing import PreprocessingService
 from churn_service.services.training import ModelTrainingService
+from churn_service.services.training_history import TrainingHistoryService
 from tests.conftest import VALID_FEATURE_PAYLOAD
 
 VALID_PREDICT_PAYLOAD = {"items": [VALID_FEATURE_PAYLOAD]}
@@ -66,8 +67,10 @@ def trained_predict_client(
     preprocessing_service: PreprocessingService,
     tmp_path_factory,
 ) -> TestClient:
-    storage = ModelStorageService(tmp_path_factory.mktemp("predict_models"))
-    ModelTrainingService(preprocessing_service, storage).train_and_save()
+    tmpdir = tmp_path_factory.mktemp("predict_models")
+    storage = ModelStorageService(tmpdir)
+    history = TrainingHistoryService(tmpdir)
+    ModelTrainingService(preprocessing_service, storage, history).train_and_save()
     with _make_predict_client(test_settings, dataset_service, preprocessing_service, storage) as c:
         yield c
 

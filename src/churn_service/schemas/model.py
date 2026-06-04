@@ -23,6 +23,7 @@ class ModelSchemaResponse(BaseModel):
 class ModelMetrics(BaseModel):
     accuracy: float
     f1: float
+    roc_auc: float | None
     train_size: int
     test_size: int
 
