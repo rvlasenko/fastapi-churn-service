@@ -1,6 +1,6 @@
 import json
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from unittest.mock import patch
 
@@ -11,7 +11,7 @@ from churn_service.schemas.history import TrainingRecord
 from churn_service.services.training_history import TrainingHistoryService
 
 _SAMPLE_RECORD = TrainingRecord(
-    trained_at=datetime(2026, 6, 1, 12, 0, 0, tzinfo=timezone.utc),
+    trained_at=datetime(2026, 6, 1, 12, 0, 0, tzinfo=UTC),
     model_type="logreg",
     hyperparameters={},
     accuracy=0.85,
@@ -22,7 +22,7 @@ _SAMPLE_RECORD = TrainingRecord(
 )
 
 _SAMPLE_RF_RECORD = TrainingRecord(
-    trained_at=datetime(2026, 6, 2, 12, 0, 0, tzinfo=timezone.utc),
+    trained_at=datetime(2026, 6, 2, 12, 0, 0, tzinfo=UTC),
     model_type="random_forest",
     hyperparameters={"n_estimators": 100},
     accuracy=0.87,
@@ -33,7 +33,7 @@ _SAMPLE_RF_RECORD = TrainingRecord(
 )
 
 _SAMPLE_NULL_ROC = TrainingRecord(
-    trained_at=datetime(2026, 6, 3, 12, 0, 0, tzinfo=timezone.utc),
+    trained_at=datetime(2026, 6, 3, 12, 0, 0, tzinfo=UTC),
     model_type="logreg",
     hyperparameters={},
     accuracy=1.0,
@@ -59,7 +59,9 @@ def service(history_dir: Path) -> TrainingHistoryService:
 # ---------------------------------------------------------------------------
 
 
-def test_append_creates_file_when_missing(service: TrainingHistoryService, history_dir: Path) -> None:
+def test_append_creates_file_when_missing(
+    service: TrainingHistoryService, history_dir: Path
+) -> None:
     history_file = history_dir / "training_history.json"
     assert not history_file.exists()
     service.append(_SAMPLE_RECORD)

@@ -11,7 +11,7 @@ router = APIRouter()
 @router.get("/")
 def health_check(
     request: Request,
-    storage: ModelStorageService = Depends(get_model_storage_service),
+    storage: ModelStorageService = Depends(get_model_storage_service),  # noqa: B008
 ) -> HealthResponse:
     dataset_loaded: bool = request.app.state.dataset_loaded
     model_loaded = storage.current is not None

@@ -55,7 +55,9 @@ def model_training_service(
     model_storage_service: ModelStorageService,
     training_history_service: TrainingHistoryService,
 ) -> ModelTrainingService:
-    return ModelTrainingService(preprocessing_service, model_storage_service, training_history_service)
+    return ModelTrainingService(
+        preprocessing_service, model_storage_service, training_history_service
+    )
 
 
 @pytest.fixture(scope="session")
@@ -78,7 +80,9 @@ def app(
     application.dependency_overrides[get_preprocessing_service] = lambda: preprocessing_service
     application.dependency_overrides[get_model_storage_service] = lambda: model_storage_service
     application.dependency_overrides[get_model_training_service] = lambda: model_training_service
-    application.dependency_overrides[get_training_history_service] = lambda: training_history_service
+    application.dependency_overrides[get_training_history_service] = lambda: (
+        training_history_service
+    )
     application.dependency_overrides[get_prediction_service] = lambda: prediction_service
     return application
 

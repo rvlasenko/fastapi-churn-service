@@ -52,13 +52,9 @@ class TrainingHistoryService:
         try:
             data = json.loads(self._path.read_text(encoding="utf-8"))
         except (json.JSONDecodeError, ValueError) as exc:
-            raise HistoryLoadError(
-                f"Failed to parse training history: {self._path}"
-            ) from exc
+            raise HistoryLoadError(f"Failed to parse training history: {self._path}") from exc
         if not isinstance(data, list):
-            raise HistoryLoadError(
-                f"Expected a JSON array in training history: {self._path}"
-            )
+            raise HistoryLoadError(f"Expected a JSON array in training history: {self._path}")
         return data
 
     def _write_raw(self, records: list[dict]) -> None:
@@ -71,6 +67,4 @@ class TrainingHistoryService:
             )
             tmp.rename(self._path)
         except OSError as exc:
-            raise HistoryWriteError(
-                f"Failed to write training history: {self._path}"
-            ) from exc
+            raise HistoryWriteError(f"Failed to write training history: {self._path}") from exc

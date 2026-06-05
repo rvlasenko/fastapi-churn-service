@@ -76,6 +76,8 @@ Key settings: `DATASET_PATH` (default: `data/churn_dataset.csv`), `MODELS_DIR` (
 | GET | `/api/v1/dataset/preview` | First N rows of the dataset |
 | POST | `/api/v1/model/train` | Train and persist the churn model (optional config body) |
 | GET | `/api/v1/model/status` | Model status, training timestamp, metrics, and model config |
+| GET | `/api/v1/model/schema` | Input field names, types, and allowed enum values |
+| GET | `/api/v1/model/metrics` | Training history (supports `?model_type=` and `?limit=` filters) |
 | POST | `/api/v1/predict/` | Predict churn for one or more customers |
 
 ## Usage

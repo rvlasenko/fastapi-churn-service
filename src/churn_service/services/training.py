@@ -80,7 +80,9 @@ class ModelTrainingService:
         try:
             self._history.append(record)
         except Exception:
-            logger.exception("History append failed: model_type=%s", effective_config.model_type.value)
+            logger.exception(
+                "History append failed: model_type=%s", effective_config.model_type.value
+            )
             raise
 
         logger.info(

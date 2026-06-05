@@ -51,7 +51,9 @@ class ErrorResponse(BaseModel):
     error: ErrorDetail
 
 
-def _error_response(status: int, code: ErrorCode, message: str, details: Any = None) -> JSONResponse:
+def _error_response(
+    status: int, code: ErrorCode, message: str, details: Any = None
+) -> JSONResponse:
     body = ErrorResponse(error=ErrorDetail(code=code, message=message, details=details))
     return JSONResponse(status_code=status, content=body.model_dump(mode="json"))
 
@@ -64,8 +66,7 @@ def _sanitize_pydantic_errors(errors: list[Any]) -> list[dict]:
         cleaned = {k: v for k, v in err.items() if k != "url"}
         if "ctx" in cleaned:
             cleaned["ctx"] = {
-                k: str(v) if isinstance(v, Exception) else v
-                for k, v in cleaned["ctx"].items()
+                k: str(v) if isinstance(v, Exception) else v for k, v in cleaned["ctx"].items()
             }
         result.append(cleaned)
     return result
