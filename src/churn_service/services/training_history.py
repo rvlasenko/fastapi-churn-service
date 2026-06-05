@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import json
+import logging
 from pathlib import Path
 
 from pydantic import ValidationError
 
 from churn_service.core.exceptions import HistoryLoadError, HistoryWriteError
 from churn_service.schemas.history import TrainingRecord
+
+logger = logging.getLogger(__name__)
 
 _HISTORY_FILENAME = "training_history.json"
 
@@ -25,6 +28,11 @@ class TrainingHistoryService:
         records = self._read_raw()
         records.insert(0, record.model_dump(mode="json"))
         self._write_raw(records)
+        logger.info(
+            "History record appended: model_type=%s trained_at=%s",
+            record.model_type,
+            record.trained_at,
+        )
 
     def load(self, model_type: str | None = None, limit: int = 10) -> list[TrainingRecord]:
         raw = self._read_raw()

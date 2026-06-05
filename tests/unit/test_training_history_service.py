@@ -1,4 +1,5 @@
 import json
+import logging
 from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import patch
@@ -179,3 +180,19 @@ def test_roc_auc_none_stored_and_retrieved(service: TrainingHistoryService) -> N
     service.append(_SAMPLE_NULL_ROC)
     records = service.load(limit=1)
     assert records[0].roc_auc is None
+
+
+# ---------------------------------------------------------------------------
+# logging
+# ---------------------------------------------------------------------------
+
+
+def test_append_logs_history_record(
+    caplog: pytest.LogCaptureFixture, service: TrainingHistoryService
+) -> None:
+    with caplog.at_level(logging.INFO, logger="churn_service.services.training_history"):
+        service.append(_SAMPLE_RECORD)
+
+    messages = [r.message for r in caplog.records]
+    assert any("History record appended" in m for m in messages)
+    assert any(_SAMPLE_RECORD.model_type in m for m in messages)

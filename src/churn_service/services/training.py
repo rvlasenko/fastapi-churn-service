@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from datetime import UTC, datetime
 
 from sklearn.metrics import accuracy_score, f1_score, roc_auc_score
@@ -10,6 +11,8 @@ from churn_service.services.model_storage import ModelStorageService, TrainedMod
 from churn_service.services.pipeline import build_churn_pipeline
 from churn_service.services.preprocessing import PreprocessingService
 from churn_service.services.training_history import TrainingHistoryService
+
+logger = logging.getLogger(__name__)
 
 
 class ModelTrainingService:
@@ -49,8 +52,21 @@ class ModelTrainingService:
         )
 
     def train_and_save(self, config: TrainingConfigChurn | None = None) -> TrainResponse:
-        trained_model = self.train(config)
-        self._storage.save(trained_model)  # step 2 — raises on failure, history skipped
+        effective_config = config or TrainingConfigChurn()
+        logger.info("Training started: model_type=%s", effective_config.model_type.value)
+
+        try:
+            trained_model = self.train(config)
+        except Exception:
+            logger.exception("Training failed: model_type=%s", effective_config.model_type.value)
+            raise
+
+        try:
+            self._storage.save(trained_model)
+        except Exception:
+            logger.exception("Model save failed: model_type=%s", effective_config.model_type.value)
+            raise
+
         record = TrainingRecord(
             trained_at=trained_model.trained_at,
             model_type=trained_model.model_type,
@@ -61,7 +77,19 @@ class ModelTrainingService:
             train_size=trained_model.train_size,
             test_size=trained_model.test_size,
         )
-        self._history.append(record)  # step 3 — raises HistoryWriteError on failure
+        try:
+            self._history.append(record)
+        except Exception:
+            logger.exception("History append failed: model_type=%s", effective_config.model_type.value)
+            raise
+
+        logger.info(
+            "Training succeeded: model_type=%s accuracy=%s f1=%s roc_auc=%s",
+            trained_model.model_type,
+            trained_model.accuracy,
+            trained_model.f1,
+            trained_model.roc_auc,
+        )
         return TrainResponse(
             accuracy=trained_model.accuracy,
             f1=trained_model.f1,

@@ -1,3 +1,5 @@
+import logging
+
 import pandas as pd
 
 from churn_service.core.exceptions import ModelNotTrainedError
@@ -6,14 +8,18 @@ from churn_service.schemas.prediction import PredictItem, PredictResponse
 from churn_service.services.model_storage import ModelStorageService
 from churn_service.services.preprocessing import FEATURE_COLUMNS
 
+logger = logging.getLogger(__name__)
+
 
 class PredictionService:
     def __init__(self, storage: ModelStorageService) -> None:
         self._storage = storage
 
     def predict(self, items: list[FeatureVectorChurn]) -> PredictResponse:
+        logger.info("Prediction requested: batch_size=%d", len(items))
         model = self._storage.current
         if model is None:
+            logger.warning("Prediction failed: model not trained")
             raise ModelNotTrainedError(
                 "No trained model available. Train the model first via POST /api/v1/model/train"
             )

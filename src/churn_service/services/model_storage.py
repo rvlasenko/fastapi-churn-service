@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -6,6 +7,8 @@ import joblib
 from sklearn.pipeline import Pipeline
 
 from churn_service.core.exceptions import ModelLoadError, ModelNotTrainedError
+
+logger = logging.getLogger(__name__)
 
 _MODEL_FILENAME = "churn_model.joblib"
 
@@ -46,6 +49,7 @@ class ModelStorageService:
         self._models_dir.mkdir(parents=True, exist_ok=True)
         joblib.dump(trained_model, self._path)
         self._current = trained_model
+        logger.info("Model saved: model_type=%s path=%s", trained_model.model_type, self._path)
 
     def load(self) -> TrainedModel:
         if not self.exists():
@@ -54,8 +58,11 @@ class ModelStorageService:
 
     def _load_if_exists(self) -> TrainedModel | None:
         if not self.exists():
+            logger.info("No model artifact found: path=%s", self._path)
             return None
-        return self._load_and_validate()
+        model = self._load_and_validate()
+        logger.info("Model artifact loaded: model_type=%s", model.model_type)
+        return model
 
     def _load_and_validate(self) -> TrainedModel:
         try:

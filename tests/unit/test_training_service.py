@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 from unittest.mock import MagicMock
 
@@ -174,3 +175,65 @@ def test_train_and_save_propagates_history_write_error(
 
     with pytest.raises(HistoryWriteError):
         svc.train_and_save()
+
+
+def test_history_append_failure_logs_append_failed_not_training_failed(
+    caplog: pytest.LogCaptureFixture,
+    preprocessing: PreprocessingService,
+    tmp_path_factory,
+) -> None:
+    tmpdir = tmp_path_factory.mktemp("history_fail_log")
+    broken_history = MagicMock(spec=TrainingHistoryService)
+    broken_history.append.side_effect = HistoryWriteError("disk full")
+    svc = ModelTrainingService(preprocessing, ModelStorageService(tmpdir), broken_history)
+
+    with caplog.at_level(logging.DEBUG, logger="churn_service.services.training"):
+        with pytest.raises(HistoryWriteError):
+            svc.train_and_save()
+
+    messages = [r.message for r in caplog.records]
+    assert any("History append failed" in m for m in messages)
+    assert not any("Training failed" in m for m in messages)
+
+
+# ---------------------------------------------------------------------------
+# logging
+# ---------------------------------------------------------------------------
+
+
+def test_train_and_save_logs_started_and_succeeded(
+    caplog: pytest.LogCaptureFixture,
+    preprocessing: PreprocessingService,
+    tmp_path_factory,
+) -> None:
+    tmpdir = tmp_path_factory.mktemp("logging_started")
+    svc = ModelTrainingService(
+        preprocessing,
+        ModelStorageService(tmpdir),
+        TrainingHistoryService(tmpdir),
+    )
+    with caplog.at_level(logging.INFO, logger="churn_service.services.training"):
+        svc.train_and_save()
+
+    messages = [r.message for r in caplog.records]
+    assert any("Training started" in m for m in messages)
+    assert any("Training succeeded" in m for m in messages)
+
+
+def test_train_and_save_does_not_log_raw_payload(
+    caplog: pytest.LogCaptureFixture,
+    preprocessing: PreprocessingService,
+    tmp_path_factory,
+) -> None:
+    tmpdir = tmp_path_factory.mktemp("logging_payload")
+    svc = ModelTrainingService(
+        preprocessing,
+        ModelStorageService(tmpdir),
+        TrainingHistoryService(tmpdir),
+    )
+    with caplog.at_level(logging.DEBUG, logger="churn_service.services.training"):
+        svc.train_and_save()
+
+    full_log = " ".join(r.message for r in caplog.records)
+    assert "X_train" not in full_log
+    assert "DataFrame" not in full_log
