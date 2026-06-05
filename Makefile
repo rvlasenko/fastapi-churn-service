@@ -1,4 +1,4 @@
-.PHONY: install run test lint lint-fix typecheck
+.PHONY: install run test lint lint-fix typecheck docker-build docker-run
 
 install:
 	uv sync --all-extras
@@ -22,3 +22,9 @@ lint-fix:
 
 typecheck:
 	uv run pyright src/
+
+docker-build:
+	docker build -t churn-service .
+
+docker-run:
+	docker run --rm -p 8000:8000 churn-service

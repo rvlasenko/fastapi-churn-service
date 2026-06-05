@@ -26,6 +26,35 @@ Interactive docs at `http://localhost:8000/docs`.
 | `make test` | Run tests |
 | `make lint` | Check code style |
 | `make lint-fix` | Auto-fix code style |
+| `make docker-build` | Build Docker image |
+| `make docker-run` | Run container on port 8000 |
+
+## Docker
+
+Build the image:
+
+```bash
+make docker-build
+```
+
+Run the container (models are ephemeral — lost when the container stops):
+
+```bash
+make docker-run
+```
+
+Run with a persistent models volume (trained model survives container restarts):
+
+```bash
+docker run --rm -p 8000:8000 -v "$(pwd)/models:/app/models" churn-service
+```
+
+Service available at `http://localhost:8000`.
+Interactive docs at `http://localhost:8000/docs`.
+
+> `models/` is runtime data. The image ships without a trained model.
+> Train after startup via `POST /api/v1/model/train`.
+> Without a volume mount, model files written inside the container are lost when the container stops.
 
 ## Configuration
 
